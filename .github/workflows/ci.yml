@@ -29,6 +29,12 @@ jobs:
       DIRECT_URL: postgresql://postgres:postgres@localhost:5432/xenon_test?schema=public
       AUTH_SECRET: ci-test-secret-not-for-production-use-only
       APP_URL: http://localhost:3000
+      # Non-secret placeholders so the Stripe SDK constructs for OFFLINE
+      # webhook-signature/idempotency tests (no live API calls in CI).
+      STRIPE_SECRET_KEY: sk_test_ci_placeholder
+      STRIPE_WEBHOOK_SECRET: whsec_ci_test_signing_secret
+      STRIPE_PRICE_PRO: price_ci_pro
+      STRIPE_PRICE_AGENCY: price_ci_agency
 
     steps:
       - uses: actions/checkout@v4

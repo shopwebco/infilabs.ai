@@ -41,3 +41,9 @@ Format for every entry:
 - Root cause: `migrate dev` requires a TTY to prompt (e.g. to confirm a new unique constraint); this agent/CI shell has none.
 - Fix applied: Generated the migration SQL with `prisma migrate diff --from-url $DATABASE_URL --to-schema-datamodel prisma/schema.prisma --script` into a timestamped `prisma/migrations/<ts>_<name>/migration.sql`, then applied it with `prisma migrate deploy`.
 - Prevention rule: In any non-interactive environment, never call `prisma migrate dev`. Author migrations via `migrate diff` → migration file → `migrate deploy`. Keep the schema warning (unique constraints on existing data) in mind when writing the SQL.
+
+## M-4 — CI green locally but red in GitHub Actions (env only in gitignored .env)   (2026-07-08)
+- What happened: `npm run ci` passed locally but the GitHub `build-test` job failed — `tests/stripe-webhook.test.ts` threw "Neither apiKey nor config.authenticator provided" at `new Stripe(process.env.STRIPE_SECRET_KEY!)`.
+- Root cause: The Stripe test fixtures live only in the gitignored `.env` (loaded by vitest locally). CI has no `.env`, so `STRIPE_SECRET_KEY` (and the other Stripe vars) were undefined and the SDK constructor threw at import time.
+- Fix applied: Added the non-secret Stripe test placeholders to the `env:` block of `.github/workflows/ci.yml` so CI mirrors local.
+- Prevention rule: Whenever a test reads a new env var, add it to BOTH `.env` (local) and the CI workflow `env:` block in the same change. `.env` is gitignored, so CI never inherits it — "passes locally" is not proof CI passes. Prefer verifying with the CI env set, or grep tests for `process.env.` before pushing.
