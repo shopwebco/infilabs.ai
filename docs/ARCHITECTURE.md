@@ -5,7 +5,8 @@
 | Layer | Choice | Notes |
 |---|---|---|
 | Framework | Next.js 15+ (App Router, TypeScript strict) | Single app serves marketing site, app, portals, API |
-| Database | PostgreSQL | Local via Docker for dev; Prisma ORM + migrations |
+| Database | PostgreSQL (**Supabase** managed — user-approved) | Prisma ORM + migrations. Pooled `DATABASE_URL` (PgBouncer :6543) at runtime + `DIRECT_URL` (:5432) for migrations. Local Postgres used for dev/CI. |
+| Deployment | **Vercel** (user-approved) | Next.js host; env vars set in Vercel project; Vercel Cron for scheduled jobs |
 | Auth | Auth.js (NextAuth v5) | Credentials (argon2/bcrypt hash) + Google OAuth; separate magic-link flow for client-portal users |
 | Payments | Stripe (platform subscriptions) + Stripe Connect Standard (agency billing) | Test mode keys in dev — real API, allowed |
 | AI | Anthropic API (`claude-sonnet-4-6` default; make model an env var) | Server-side only |
@@ -80,7 +81,8 @@ White-label portals: accent + logo + brand name come from `WhiteLabelSettings` a
 
 ## 8. Environment (.env.example must list all of these with comments)
 ```
-DATABASE_URL=
+DATABASE_URL=            # Supabase pooled (PgBouncer, :6543) — runtime
+DIRECT_URL=              # Supabase direct (:5432) — Prisma migrations only
 AUTH_SECRET=
 GOOGLE_CLIENT_ID= / GOOGLE_CLIENT_SECRET=          # optional OAuth
 STRIPE_SECRET_KEY= / STRIPE_WEBHOOK_SECRET= / NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=

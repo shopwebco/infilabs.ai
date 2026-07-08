@@ -1,0 +1,257 @@
+// Xenon — authoritative Prisma schema (docs/DATA_MODEL.md).
+// Evolve via migrations; keep DATA_MODEL.md in sync.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pooled (PgBouncer) — runtime
+  directUrl = env("DIRECT_URL")   // direct — migrations/introspection (Supabase)
+}
+
+enum PlatformRole {
+  USER
+  PLATFORM_ADMIN
+}
+
+enum WorkspaceRole {
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum Plan {
+  STARTER
+  PRO
+  AGENCY
+  ENTERPRISE
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  EXPIRED
+}
+
+enum WorkStatus {
+  DRAFT
+  IN_REVIEW
+  APPROVED
+  PUBLISHED
+}
+
+enum ActionActor {
+  AGENT
+  STAFF
+  MANAGER
+  ADMIN
+  SYSTEM
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  OVERDUE
+}
+
+enum IntegrationProvider {
+  AMAZON
+  WALMART
+  TIKTOK
+  SHOPIFY
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  ERROR
+  DISCONNECTED
+}
+
+model User {
+  id               String       @id @default(cuid())
+  email            String       @unique
+  name             String?
+  passwordHash     String? // null if OAuth-only
+  platformRole     PlatformRole @default(USER)
+  plan             Plan         @default(STARTER)
+  stripeCustomerId String?      @unique
+  memberships      Membership[]
+  agentUsage       AgentUsage[]
+  createdAt        DateTime     @default(now())
+}
+
+model Workspace {
+  id                     String              @id @default(cuid())
+  name                   String
+  ownerId                String
+  stripeConnectAccountId String?             @unique
+  connectOnboarded       Boolean             @default(false)
+  memberships            Membership[]
+  clientProjects         ClientProject[]
+  whiteLabel             WhiteLabelSettings?
+  referralCode           String              @unique @default(cuid())
+  directoryListed        Boolean             @default(false)
+  createdAt              DateTime            @default(now())
+}
+
+model Membership {
+  id          String             @id @default(cuid())
+  userId      String
+  workspaceId String
+  role        WorkspaceRole
+  user        User               @relation(fields: [userId], references: [id])
+  workspace   Workspace          @relation(fields: [workspaceId], references: [id])
+  assignments ClientAssignment[]
+
+  @@unique([userId, workspaceId])
+}
+
+model ClientProject {
+  id           String                   @id @default(cuid())
+  workspaceId  String
+  name         String
+  workspace    Workspace                @relation(fields: [workspaceId], references: [id])
+  assignments  ClientAssignment[]
+  portalUsers  ClientPortalUser[]
+  integrations MarketplaceIntegration[]
+  approvals    Approval[]
+  workItems    WorkItem[]
+  actions      AgentAction[]
+  invoices     ClientInvoice[]
+  archived     Boolean                  @default(false)
+  createdAt    DateTime                 @default(now())
+}
+
+model ClientAssignment {
+  id              String        @id @default(cuid())
+  membershipId    String
+  clientProjectId String
+  membership      Membership    @relation(fields: [membershipId], references: [id])
+  clientProject   ClientProject @relation(fields: [clientProjectId], references: [id])
+
+  @@unique([membershipId, clientProjectId])
+}
+
+model ClientPortalUser {
+  id              String           @id @default(cuid())
+  clientProjectId String
+  email           String
+  name            String?
+  clientProject   ClientProject    @relation(fields: [clientProjectId], references: [id])
+  magicTokens     MagicLinkToken[]
+
+  @@unique([clientProjectId, email])
+}
+
+model MagicLinkToken {
+  id           String           @id @default(cuid())
+  portalUserId String
+  tokenHash    String           @unique // store HASH, never raw token
+  expiresAt    DateTime
+  usedAt       DateTime?
+  portalUser   ClientPortalUser @relation(fields: [portalUserId], references: [id])
+}
+
+model Approval {
+  id              String         @id @default(cuid())
+  clientProjectId String? // null → self-serve customer approval
+  userId          String?
+  title           String
+  detail          String
+  payload         Json
+  audience        String // 'CLIENT' | 'MANAGER' | 'CUSTOMER'
+  status          ApprovalStatus @default(PENDING)
+  decidedById     String?
+  decidedAt       DateTime?
+  clientProject   ClientProject? @relation(fields: [clientProjectId], references: [id])
+  createdAt       DateTime       @default(now())
+}
+
+model WorkItem {
+  id              String        @id @default(cuid())
+  clientProjectId String
+  title           String
+  body            Json
+  status          WorkStatus    @default(DRAFT)
+  createdByRole   ActionActor
+  createdById     String?
+  reviewedById    String?
+  clientProject   ClientProject @relation(fields: [clientProjectId], references: [id])
+  createdAt       DateTime      @default(now())
+}
+
+model AgentAction {
+  id               String         @id @default(cuid())
+  clientProjectId  String?
+  userId           String?
+  actor            ActionActor
+  kind             String
+  summary          String
+  valueImpactCents Int?
+  payload          Json
+  clientProject    ClientProject? @relation(fields: [clientProjectId], references: [id])
+  createdAt        DateTime       @default(now())
+}
+
+model AgentUsage {
+  id     String @id @default(cuid())
+  userId String
+  month  String // '2026-07'
+  count  Int    @default(0)
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([userId, month])
+}
+
+model WhiteLabelSettings {
+  id           String    @id @default(cuid())
+  workspaceId  String    @unique
+  brandName    String
+  accentColor  String    @default("#2DD4BF")
+  logoUrl      String?
+  customDomain String?   @unique
+  emailFrom    String?
+  hideXenon    Boolean   @default(true)
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+}
+
+model ClientInvoice {
+  id               String        @id @default(cuid())
+  clientProjectId  String
+  stripeInvoiceId  String        @unique
+  amountCents      Int
+  currency         String        @default("usd")
+  status           InvoiceStatus
+  hostedInvoiceUrl String?
+  recurring        Boolean       @default(false)
+  clientProject    ClientProject @relation(fields: [clientProjectId], references: [id])
+  createdAt        DateTime      @default(now())
+}
+
+model MarketplaceIntegration {
+  id              String              @id @default(cuid())
+  clientProjectId String?
+  userId          String?
+  provider        IntegrationProvider
+  status          IntegrationStatus   @default(DISCONNECTED)
+  accessTokenEnc  String? // encrypted at rest
+  refreshTokenEnc String?
+  externalId      String?
+  lastSyncAt      DateTime?
+  clientProject   ClientProject?      @relation(fields: [clientProjectId], references: [id])
+}
+
+model ReferralConversion {
+  id             String   @id @default(cuid())
+  workspaceId    String
+  referredUserId String
+  commissionPct  Int      @default(25)
+  monthlyCents   Int
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+}
