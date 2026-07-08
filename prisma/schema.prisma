@@ -95,9 +95,25 @@ model Workspace {
   memberships            Membership[]
   clientProjects         ClientProject[]
   whiteLabel             WhiteLabelSettings?
+  invites                WorkspaceInvite[]
   referralCode           String              @unique @default(cuid())
   directoryListed        Boolean             @default(false)
   createdAt              DateTime            @default(now())
+}
+
+model WorkspaceInvite {
+  id          String        @id @default(cuid())
+  workspaceId String
+  email       String
+  role        WorkspaceRole
+  tokenHash   String        @unique // store HASH, never the raw token
+  acceptedAt  DateTime?
+  expiresAt   DateTime
+  invitedById String
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id])
+  createdAt   DateTime      @default(now())
+
+  @@index([workspaceId])
 }
 
 model Membership {
