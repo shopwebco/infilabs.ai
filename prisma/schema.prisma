@@ -80,6 +80,7 @@ model User {
   platformRole     PlatformRole @default(USER)
   plan             Plan         @default(STARTER)
   stripeCustomerId String?      @unique
+  stripeSubscriptionId String?  @unique // active platform subscription (Pro/Agency)
   memberships      Membership[]
   agentUsage       AgentUsage[]
   createdAt        DateTime     @default(now())
@@ -244,6 +245,12 @@ model MarketplaceIntegration {
   externalId      String?
   lastSyncAt      DateTime?
   clientProject   ClientProject?      @relation(fields: [clientProjectId], references: [id])
+}
+
+model ProcessedStripeEvent {
+  id        String   @id // Stripe event id (evt_...) — presence = already handled (idempotency)
+  type      String
+  createdAt DateTime @default(now())
 }
 
 model ReferralConversion {

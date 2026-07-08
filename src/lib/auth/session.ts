@@ -20,6 +20,8 @@ export async function requireUser() {
       name: true,
       plan: true,
       platformRole: true,
+      stripeCustomerId: true,
+      stripeSubscriptionId: true,
       createdAt: true,
     },
   });

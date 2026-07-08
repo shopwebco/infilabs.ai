@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser } from "@/lib/auth/session";
 import { Logo, Panel } from "@/components/ui";
 import { LogoutButton } from "./logout-button";
@@ -38,6 +39,14 @@ export default async function DashboardPage() {
               <div className="flex justify-between">
                 <dt className="text-muted">Plan</dt>
                 <dd className="font-data">{PLAN_LABEL[user.plan] ?? user.plan}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-muted">Billing</dt>
+                <dd>
+                  <Link href="/dashboard/billing" className="text-ice hover:underline">
+                    Manage plan →
+                  </Link>
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-muted">Member since</dt>

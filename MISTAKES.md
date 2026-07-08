@@ -35,3 +35,9 @@ Format for every entry:
 - Root cause: Next.js injects an always-present `<div role="alert" id="__next-route-announcer__">`, so `getByRole('alert')` resolves to two elements — the injected announcer plus the real message.
 - Fix applied: Assert on the specific message text (`getByText(/invalid email or password/i)`) plus the expected URL instead of the ambiguous role.
 - Prevention rule: In Next.js E2E tests, never select by `role="alert"` alone. Target the specific message text or a `data-testid`; the route announcer will always collide with a bare alert-role query.
+
+## M-3 — `prisma migrate dev` fails in non-interactive shells   (2026-07-08)
+- What happened: Creating the Phase 1 migration with `prisma migrate dev` (even `--create-only`) aborted with "environment is non-interactive, which is not supported."
+- Root cause: `migrate dev` requires a TTY to prompt (e.g. to confirm a new unique constraint); this agent/CI shell has none.
+- Fix applied: Generated the migration SQL with `prisma migrate diff --from-url $DATABASE_URL --to-schema-datamodel prisma/schema.prisma --script` into a timestamped `prisma/migrations/<ts>_<name>/migration.sql`, then applied it with `prisma migrate deploy`.
+- Prevention rule: In any non-interactive environment, never call `prisma migrate dev`. Author migrations via `migrate diff` → migration file → `migrate deploy`. Keep the schema warning (unique constraints on existing data) in mind when writing the SQL.
