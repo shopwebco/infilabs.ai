@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xenon — Agency portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050810; --panel:rgba(16,23,42,.7); --panel-solid:#0C1222;
+  --line:rgba(125,211,252,.13); --ice:#67E8F9; --ice-dim:#38BDF8; --violet:#8B5CF6; --violet-soft:#A78BFA;
+  --text:#E8ECF4; --muted:#8A94A8; --faint:#5B6478;
+  --green:#4ADE80; --amber:#FBBF24; --red:#F87171;
+  --brand:#2DD4BF; --brand-dim:#14B8A6;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;line-height:1.55;min-height:100vh}
+h1,h2,h3{font-family:'Space Grotesk'}
+.mono{font-family:'JetBrains Mono',monospace}
+a{color:inherit;text-decoration:none}
+.aurora{position:fixed;inset:0;pointer-events:none;z-index:0}
+.aurora::before{content:'';position:absolute;width:600px;height:600px;top:-240px;right:-160px;border-radius:50%;filter:blur(120px);background:radial-gradient(circle,rgba(139,92,246,.18),transparent 65%)}
+.aurora::after{content:'';position:absolute;width:560px;height:560px;bottom:-260px;left:-140px;border-radius:50%;filter:blur(120px);background:radial-gradient(circle,rgba(56,189,248,.15),transparent 65%)}
+
+.switchbar{position:sticky;top:0;z-index:60;display:flex;justify-content:center;gap:8px;padding:12px;background:rgba(5,8,16,.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--line)}
+.sw{padding:9px 20px;border-radius:99px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--line);color:var(--muted);background:transparent;font-family:'Inter';transition:.2s}
+.sw.on{background:linear-gradient(135deg,var(--ice-dim),var(--violet));color:#fff;border-color:transparent;box-shadow:0 0 20px rgba(56,189,248,.35)}
+.sw-note{position:absolute;right:18px;top:50%;transform:translateY(-50%);font-size:11.5px;color:var(--faint)}
+@media(max-width:760px){.sw-note{display:none}}
+
+.app{position:relative;z-index:1;display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 58px)}
+aside{border-right:1px solid var(--line);padding:22px 16px;background:rgba(8,12,24,.55);backdrop-filter:blur(10px)}
+.logo{display:flex;align-items:center;gap:9px;font-family:'Space Grotesk';font-weight:700;font-size:17px;margin-bottom:28px;padding:0 8px}
+.logo-dot{width:22px;height:22px;border-radius:7px;background:conic-gradient(from 210deg,var(--ice),var(--violet),var(--ice));position:relative;flex-shrink:0}
+.logo-dot::after{content:'';position:absolute;inset:3px;border-radius:4px;background:var(--bg)}
+.side-sec{font-size:10.5px;letter-spacing:1.5px;text-transform:uppercase;color:var(--faint);margin:20px 8px 8px;font-family:'JetBrains Mono'}
+.side a{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:10px;color:var(--muted);font-size:13.5px;margin-bottom:2px}
+.side a:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.side a.on{background:rgba(56,189,248,.1);color:var(--ice);border:1px solid rgba(56,189,248,.2)}
+.side svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.badge{margin-left:auto;font-size:10.5px;font-weight:700;background:var(--violet);color:#fff;border-radius:99px;padding:2px 7px}
+.client-mini{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:9px;font-size:13px;color:var(--muted)}
+.client-mini:hover{background:rgba(255,255,255,.04);color:var(--text)}
+.avat{width:22px;height:22px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:9.5px;font-weight:700;flex-shrink:0;font-family:'JetBrains Mono'}
+
+main{padding:30px 34px;overflow-x:hidden}
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:26px;flex-wrap:wrap}
+.top h1{font-size:24px;font-weight:700;letter-spacing:-.4px}
+.top p{color:var(--muted);font-size:13.5px;margin-top:3px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 18px;border-radius:11px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--line);color:var(--muted);background:transparent;font-family:'Inter';transition:.2s}
+.btn:hover{color:var(--text);border-color:rgba(125,211,252,.4)}
+.btn.glow{background:linear-gradient(135deg,var(--ice-dim),var(--violet));color:#fff;border:none;box-shadow:0 0 18px rgba(56,189,248,.3)}
+.btn.glow:hover{transform:translateY(-1px)}
+.btn.green{background:rgba(74,222,128,.12);border-color:rgba(74,222,128,.35);color:var(--green)}
+.btn.red{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.3);color:var(--red)}
+.btn.sm{padding:7px 13px;font-size:12px;border-radius:9px}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:18px 20px;backdrop-filter:blur(10px)}
+.kpi .l{font-size:12px;color:var(--faint);margin-bottom:6px}
+.kpi .v{font-family:'Space Grotesk';font-size:26px;font-weight:700}
+.kpi .d{font-size:11.5px;margin-top:4px;font-family:'JetBrains Mono'}
+.up{color:var(--green)}.warn{color:var(--amber)}
+
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;backdrop-filter:blur(10px);overflow:hidden;margin-bottom:22px}
+.panel-h{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+.panel-h h3{font-size:15px;font-weight:600}
+.panel-h .hint{font-size:12px;color:var(--faint)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:11px 20px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--faint);font-weight:600;border-bottom:1px solid var(--line);font-family:'JetBrains Mono'}
+td{padding:14px 20px;border-bottom:1px solid rgba(125,211,252,.06);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.cl{display:flex;align-items:center;gap:11px;font-weight:600;color:var(--text)}
+.spark{display:flex;align-items:flex-end;gap:2.5px;height:26px;width:74px}
+.spark i{flex:1;border-radius:2px 2px 0 0;background:linear-gradient(180deg,var(--ice),rgba(139,92,246,.4))}
+.spark.dn i{background:linear-gradient(180deg,var(--amber),rgba(251,191,36,.25))}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:99px;font-family:'JetBrains Mono'}
+.p-ok{background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.28)}
+.p-watch{background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.28)}
+.p-appr{background:rgba(139,92,246,.12);color:var(--violet-soft);border:1px solid rgba(139,92,246,.32)}
+.money{font-family:'JetBrains Mono';font-weight:500}
+
+.two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:22px}
+.feed{padding:6px 20px 14px}
+.feed-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid rgba(125,211,252,.06);font-size:13px;color:var(--muted)}
+.feed-item:last-child{border-bottom:none}
+.feed-item b{color:var(--text);font-weight:600}
+.feed-ic{width:28px;height:28px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:12px}
+.f-blue{background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3)}
+.f-green{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3)}
+.f-violet{background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.3)}
+.f-time{margin-left:auto;font-size:11px;color:var(--faint);font-family:'JetBrains Mono';flex-shrink:0}
+.stripe-row{display:flex;align-items:center;justify-content:space-between;padding:13px 20px;border-bottom:1px solid rgba(125,211,252,.06);font-size:13px}
+.stripe-row:last-child{border-bottom:none}
+.stripe-row .who{display:flex;align-items:center;gap:10px;color:var(--text);font-weight:500}
+
+.client-shell{max-width:960px;margin:0 auto;padding:0 26px 60px}
+.cnav{display:flex;align-items:center;gap:12px;padding:20px 0 26px}
+.cbrand{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk';font-weight:700;font-size:18px}
+.cbrand .cdot{width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,var(--brand),#0EA5E9);display:flex;align-items:center;justify-content:center;font-size:12px;color:#04241F;font-weight:800}
+.cnav .dom{font-size:11.5px;color:var(--faint);font-family:'JetBrains Mono';margin-left:2px}
+.cnav .me{margin-left:auto;display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--muted)}
+.chero{background:linear-gradient(135deg,rgba(45,212,191,.1),rgba(14,165,233,.06));border:1px solid rgba(45,212,191,.25);border-radius:18px;padding:24px 26px;margin-bottom:22px}
+.chero h1{font-size:21px;margin-bottom:4px}
+.chero p{color:var(--muted);font-size:13.5px}
+.chero b{color:var(--brand)}
+.approve-card{border:1px solid rgba(139,92,246,.3);background:rgba(139,92,246,.06);border-radius:15px;padding:17px 19px;margin-bottom:12px;display:flex;gap:14px;align-items:flex-start;transition:.3s}
+.approve-card.donefx{opacity:.55;border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.05)}
+.approve-card .txt{flex:1}
+.approve-card .txt b{color:var(--text)}
+.approve-card .txt p{color:var(--muted);font-size:13px;margin-top:2px}
+.approve-actions{display:flex;gap:8px;flex-shrink:0}
+.asked{font-size:12px;color:var(--green);font-weight:600;display:none;align-items:center;gap:6px}
+.askbar{display:flex;gap:10px;margin-top:6px}
+.askbar input{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:12px 16px;color:var(--text);font-size:13.5px;font-family:'Inter';outline:none}
+.askbar input:focus{border-color:rgba(45,212,191,.5);box-shadow:0 0 0 3px rgba(45,212,191,.12)}
+.askbar input::placeholder{color:var(--faint)}
+.cbtn{background:linear-gradient(135deg,var(--brand-dim),#0EA5E9);border:none;color:#fff}
+.pow{ text-align:center;font-size:11px;color:var(--faint);margin-top:34px}
+.hidden{display:none}
+@media(max-width:900px){.app{grid-template-columns:1fr}aside{display:none}.kpis{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}main{padding:22px 18px}
+.hidecol{display:none}}
+</style>
+</head>
+<body>
+<div class="aurora"></div>
+
+<div class="switchbar">
+  <button class="sw on" id="swA" onclick="setView('agency')">Agency view</button>
+  <button class="sw" id="swC" onclick="setView('client')">Client view (white-label)</button>
+  <span class="sw-note">Demo toggle — clients only ever see their own portal</span>
+</div>
+
+<!-- ================= AGENCY VIEW ================= -->
+<div class="app" id="agencyView">
+  <aside>
+    <div class="logo"><span class="logo-dot"></span>XENON <span style="font-size:10px;color:var(--violet-soft);font-family:'JetBrains Mono';margin-left:2px">AGENCY</span></div>
+    <div class="side">
+      <a class="on" href="#"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>Dashboard</a>
+      <a href="#"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/><circle cx="9" cy="7" r="4"/></svg>Clients</a>
+      <a href="#"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg>Approvals<span class="badge">5</span></a>
+      <a href="#"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6"/></svg>Reports</a>
+      <a href="#"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20"/></svg>Billing · Stripe</a>
+      <a href="#"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg>Playbooks</a>
+      <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h0a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h0a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v0a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>White-label</a>
+    </div>
+    <div class="side-sec">Clients</div>
+    <div>
+      <a class="client-mini" href="#"><span class="avat" style="background:rgba(45,212,191,.18);color:var(--brand)">PG</span>PetGear Co</a>
+      <a class="client-mini" href="#"><span class="avat" style="background:rgba(251,191,36,.15);color:var(--amber)">LB</span>LumaBrew</a>
+      <a class="client-mini" href="#"><span class="avat" style="background:rgba(139,92,246,.18);color:var(--violet-soft)">NV</span>NovaFit</a>
+      <a class="client-mini" href="#"><span class="avat" style="background:rgba(56,189,248,.15);color:var(--ice)">KH</span>KindHome</a>
+      <a class="client-mini" href="#" style="color:var(--faint)">+ 8 more</a>
+    </div>
+  </aside>
+
+  <main>
+    <div class="top">
+      <div>
+        <h1>Good morning, Atlas Commerce</h1>
+        <p>Tuesday, July 7 · The agent completed 214 actions across your clients this week</p>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6"/></svg>Generate proposal</button>
+        <button class="btn glow">+ New client project</button>
+      </div>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="l">Managed clients</div><div class="v">12</div><div class="d up">+2 this month</div></div>
+      <div class="kpi"><div class="l">Retainers collected · your Stripe</div><div class="v">$38,400</div><div class="d up">↑ 12% vs June</div></div>
+      <div class="kpi"><div class="l">Client profit generated · 30d</div><div class="v">$212k</div><div class="d up">↑ 9% — auto-logged for reports</div></div>
+      <div class="kpi"><div class="l">Pending client approvals</div><div class="v">5</div><div class="d warn">2 waiting &gt; 48h</div></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-h"><h3>Client projects</h3><span class="hint">Each client has an isolated workspace + branded portal</span></div>
+      <table>
+        <tr><th>Client</th><th class="hidecol">Marketplaces</th><th>Profit trend · 30d</th><th class="hidecol">Retainer</th><th>Status</th><th></th></tr>
+        <tr>
+          <td><span class="cl"><span class="avat" style="width:28px;height:28px;background:rgba(45,212,191,.18);color:var(--brand)">PG</span>PetGear Co</span></td>
+          <td class="hidecol" style="color:var(--muted)">Amazon · TikTok</td>
+          <td><span class="spark"><i style="height:35%"></i><i style="height:45%"></i><i style="height:40%"></i><i style="height:58%"></i><i style="height:66%"></i><i style="height:60%"></i><i style="height:82%"></i><i style="height:100%"></i></span></td>
+          <td class="hidecol money">$4,500/mo</td>
+          <td><span class="pill p-appr">3 approvals</span></td>
+          <td><button class="btn sm" onclick="setView('client')">View portal →</button></td>
+        </tr>
+        <tr>
+          <td><span class="cl"><span class="avat" style="width:28px;height:28px;background:rgba(251,191,36,.15);color:var(--amber)">LB</span>LumaBrew</span></td>
+          <td class="hidecol" style="color:var(--muted)">Amazon · Walmart</td>
+          <td><span class="spark"><i style="height:55%"></i><i style="height:62%"></i><i style="height:58%"></i><i style="height:70%"></i><i style="height:64%"></i><i style="height:75%"></i><i style="height:71%"></i><i style="height:78%"></i></span></td>
+          <td class="hidecol money">$3,200/mo</td>
+          <td><span class="pill p-ok">Healthy</span></td>
+          <td><button class="btn sm">View portal →</button></td>
+        </tr>
+        <tr>
+          <td><span class="cl"><span class="avat" style="width:28px;height:28px;background:rgba(139,92,246,.18);color:var(--violet-soft)">NV</span>NovaFit</span></td>
+          <td class="hidecol" style="color:var(--muted)">Amazon</td>
+          <td><span class="spark dn"><i style="height:80%"></i><i style="height:72%"></i><i style="height:76%"></i><i style="height:60%"></i><i style="height:55%"></i><i style="height:48%"></i><i style="height:52%"></i><i style="height:44%"></i></span></td>
+          <td class="hidecol money">$2,800/mo</td>
+          <td><span class="pill p-watch">Ad fatigue</span></td>
+          <td><button class="btn sm">View portal →</button></td>
+        </tr>
+        <tr>
+          <td><span class="cl"><span class="avat" style="width:28px;height:28px;background:rgba(56,189,248,.15);color:var(--ice)">KH</span>KindHome</span></td>
+          <td class="hidecol" style="color:var(--muted)">Amazon · Shopify</td>
+          <td><span class="spark"><i style="height:30%"></i><i style="height:38%"></i><i style="height:44%"></i><i style="height:42%"></i><i style="height:55%"></i><i style="height:60%"></i><i style="height:57%"></i><i style="height:68%"></i></span></td>
+          <td class="hidecol money">$5,000/mo</td>
+          <td><span class="pill p-ok">Healthy</span></td>
+          <td><button class="btn sm">View portal →</button></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="two-col">
+      <div class="panel">
+        <div class="panel-h"><h3>Agent activity across clients</h3><span class="hint">All actions logged + client-visible</span></div>
+        <div class="feed">
+          <div class="feed-item"><span class="feed-ic f-green">✓</span><span><b>PetGear Co</b> — filed fee-overcharge claim on 3 SKUs, <b>$41 recovered</b><br><span style="font-size:12px">Logged to client portal automatically</span></span><span class="f-time">07:02</span></div>
+          <div class="feed-item"><span class="feed-ic f-blue">→</span><span><b>LumaBrew</b> — trimmed 14 wasted keywords overnight, ACoS now <b>22.4%</b></span><span class="f-time">03:40</span></div>
+          <div class="feed-item"><span class="feed-ic f-violet">?</span><span><b>NovaFit</b> — creative fatigue detected; drafted 3 new ad variants, <b>awaiting your review</b></span><span class="f-time">02:15</span></div>
+          <div class="feed-item"><span class="feed-ic f-blue">→</span><span><b>KindHome</b> — Shopify listing synced to Amazon, 96 keywords indexed</span><span class="f-time">01:56</span></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-h"><h3>Billing · connected to your Stripe</h3><span class="pill p-ok">● Live</span></div>
+        <div>
+          <div class="stripe-row"><span class="who"><span class="avat" style="background:rgba(45,212,191,.18);color:var(--brand)">PG</span>PetGear Co — July retainer</span><span class="money up">$4,500 paid</span></div>
+          <div class="stripe-row"><span class="who"><span class="avat" style="background:rgba(56,189,248,.15);color:var(--ice)">KH</span>KindHome — July retainer</span><span class="money up">$5,000 paid</span></div>
+          <div class="stripe-row"><span class="who"><span class="avat" style="background:rgba(139,92,246,.18);color:var(--violet-soft)">NV</span>NovaFit — invoice #0147</span><span class="money warn">Due in 3d</span></div>
+          <div class="stripe-row"><span style="color:var(--muted);font-size:12.5px">Funds settle directly to Atlas Commerce's Stripe account</span><button class="btn sm">New invoice</button></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ================= CLIENT VIEW (white-label) ================= -->
+<div class="client-shell hidden" id="clientView">
+  <div class="cnav">
+    <span class="cbrand"><span class="cdot">A</span>Atlas Commerce<span class="dom">portal.atlascommerce.co</span></span>
+    <span class="me"><span class="avat" style="background:rgba(45,212,191,.18);color:var(--brand)">PG</span>PetGear Co · signed in via magic link</span>
+  </div>
+
+  <div class="chero">
+    <h1>Your July snapshot, PetGear 👋</h1>
+    <p>Atlas Commerce and their AI generated <b>$18,240 net profit</b> for you in the last 30 days — up 23% from June. Full report below.</p>
+  </div>
+
+  <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+    <div class="kpi"><div class="l">Revenue · 30d</div><div class="v">$64.2k</div><div class="d up">↑ 18%</div></div>
+    <div class="kpi"><div class="l">Net profit</div><div class="v">$18.2k</div><div class="d up">↑ 23%</div></div>
+    <div class="kpi"><div class="l">ACoS</div><div class="v">22.4%</div><div class="d up">↓ 3.1 pts (better)</div></div>
+    <div class="kpi"><div class="l">Value recovered by agent</div><div class="v">$347</div><div class="d" style="color:var(--muted)">fees + wasted ad spend</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-h"><h3>Needs your approval</h3><span class="hint">One tap — Atlas handles the rest</span></div>
+    <div style="padding:16px 20px">
+      <div class="approve-card" id="ap1">
+        <div class="txt"><b>Restock: GPS Collar V2</b><p>Inventory runs dry in 18 days. Atlas recommends a 400-unit PO (~$8,900) to avoid a ranking drop.</p></div>
+        <div class="approve-actions">
+          <button class="btn sm green" onclick="approve('ap1')">Approve</button>
+          <button class="btn sm red">Decline</button>
+        </div>
+        <span class="asked">✓ Approved — Atlas notified</span>
+      </div>
+      <div class="approve-card" id="ap2" style="margin-bottom:0">
+        <div class="txt"><b>New ad creatives (3 variants)</b><p>Current ads are fatiguing. Preview the new variants before they go live tonight.</p></div>
+        <div class="approve-actions">
+          <button class="btn sm">Preview</button>
+          <button class="btn sm green" onclick="approve('ap2')">Approve</button>
+        </div>
+        <span class="asked">✓ Approved — going live tonight</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-h"><h3>What Atlas did for you this week</h3><span class="hint">Every action, logged automatically</span></div>
+    <div class="feed" style="padding:6px 20px 14px">
+      <div class="feed-item"><span class="feed-ic f-green">✓</span><span>Recovered <b>$41</b> in Amazon fee overcharges on 3 products</span><span class="f-time">Tue</span></div>
+      <div class="feed-item"><span class="feed-ic f-green">✓</span><span>Optimized ad bids overnight — saved <b>$86</b> in wasted spend</span><span class="f-time">Tue</span></div>
+      <div class="feed-item"><span class="feed-ic f-blue">→</span><span>Rewrote your <b>GPS Collar V2</b> listing — now ranking #6 for "gps dog collar" (was #14)</span><span class="f-time">Mon</span></div>
+      <div class="feed-item"><span class="feed-ic f-blue">→</span><span>Held your price while competitor PetSafe Pro dropped 12% — margin protected</span><span class="f-time">Sun</span></div>
+    </div>
+  </div>
+
+  <div class="panel" style="border-color:rgba(45,212,191,.3)">
+    <div class="panel-h"><h3>Ask about your business</h3><span class="hint">Answers scoped to your data only</span></div>
+    <div style="padding:16px 20px 20px">
+      <div class="askbar">
+        <input placeholder="Why were sales down on Tuesday?" />
+        <button class="btn cbtn">Ask</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pow">Powered by Atlas Commerce · Reports refresh live · <span style="color:var(--brand)">Download July PDF</span></div>
+</div>
+
+<script>
+function setView(v){
+  const a=document.getElementById('agencyView'),c=document.getElementById('clientView');
+  document.getElementById('swA').classList.toggle('on',v==='agency');
+  document.getElementById('swC').classList.toggle('on',v==='client');
+  a.classList.toggle('hidden',v!=='agency');
+  c.classList.toggle('hidden',v!=='client');
+  window.scrollTo({top:0});
+}
+function approve(id){
+  const c=document.getElementById(id);
+  c.classList.add('donefx');
+  c.querySelector('.approve-actions').style.display='none';
+  c.querySelector('.asked').style.display='flex';
+}
+</script>
+</body>
+</html>

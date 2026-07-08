@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Xenon — The AI co-pilot for marketplace sellers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050810; --bg2:#0A0F1E; --panel:rgba(16,23,42,.62); --panel-solid:#0D1426;
+  --line:rgba(125,211,252,.14); --line2:rgba(139,92,246,.18);
+  --ice:#67E8F9; --ice-dim:#38BDF8; --violet:#8B5CF6; --violet-soft:#A78BFA;
+  --text:#E8ECF4; --muted:#8A94A8; --faint:#5B6478;
+  --green:#4ADE80; --amber:#FBBF24; --red:#F87171;
+  --radius:16px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:16px;line-height:1.6;overflow-x:hidden}
+h1,h2,h3,.display{font-family:'Space Grotesk',sans-serif}
+.mono{font-family:'JetBrains Mono',monospace}
+a{color:inherit;text-decoration:none}
+::selection{background:rgba(103,232,249,.25)}
+
+.aurora{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.aurora .blob{position:absolute;border-radius:50%;filter:blur(110px);opacity:.5;animation:drift 26s ease-in-out infinite alternate}
+.aurora .b1{width:640px;height:640px;top:-220px;left:-140px;background:radial-gradient(circle,rgba(56,189,248,.28),transparent 65%)}
+.aurora .b2{width:560px;height:560px;top:10%;right:-180px;background:radial-gradient(circle,rgba(139,92,246,.26),transparent 65%);animation-delay:-8s}
+.aurora .b3{width:700px;height:700px;top:120vh;left:30%;background:radial-gradient(circle,rgba(56,189,248,.12),transparent 65%);animation-delay:-14s}
+@keyframes drift{from{transform:translate(0,0) scale(1)}to{transform:translate(60px,40px) scale(1.12)}}
+.grid-overlay{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(125,211,252,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(125,211,252,.035) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse 90% 60% at 50% 0%,black,transparent 70%)}
+
+.wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:0 28px}
+
+nav{position:sticky;top:0;z-index:50;backdrop-filter:blur(18px);background:rgba(5,8,16,.6);border-bottom:1px solid var(--line)}
+.nav-in{max-width:1180px;margin:0 auto;padding:16px 28px;display:flex;align-items:center;gap:36px}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk';font-weight:700;font-size:20px;letter-spacing:.5px}
+.logo-dot{width:26px;height:26px;border-radius:8px;background:conic-gradient(from 210deg,var(--ice),var(--violet),var(--ice));box-shadow:0 0 18px rgba(103,232,249,.55);position:relative}
+.logo-dot::after{content:'';position:absolute;inset:3px;border-radius:5px;background:var(--bg)}
+.logo sup{font-size:11px;color:var(--ice);font-weight:500}
+.nav-links{display:flex;gap:28px;font-size:14px;color:var(--muted)}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{margin-left:auto;display:flex;gap:12px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid transparent;transition:.2s;font-family:'Inter'}
+.btn-ghost{color:var(--muted);border-color:var(--line)}
+.btn-ghost:hover{color:var(--text);border-color:rgba(125,211,252,.4)}
+.btn-glow{background:linear-gradient(135deg,var(--ice-dim),var(--violet));color:#fff;box-shadow:0 0 24px rgba(103,232,249,.35),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-glow:hover{transform:translateY(-2px);box-shadow:0 0 40px rgba(103,232,249,.55),inset 0 1px 0 rgba(255,255,255,.25)}
+.btn-lg{padding:15px 30px;font-size:15px;border-radius:14px}
+
+.hero{padding:96px 0 60px;display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--ice);border:1px solid rgba(103,232,249,.3);background:rgba(103,232,249,.06);padding:7px 14px;border-radius:99px;margin-bottom:26px}
+.eyebrow .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+.hero h1{font-size:clamp(38px,5vw,60px);line-height:1.06;font-weight:700;letter-spacing:-1.5px;margin-bottom:22px}
+.grad{background:linear-gradient(100deg,var(--ice) 10%,var(--violet-soft) 60%,var(--ice));background-size:200% auto;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shine 6s linear infinite}
+@keyframes shine{to{background-position:200% center}}
+.hero p.sub{color:var(--muted);font-size:18px;max-width:520px;margin-bottom:34px}
+.hero-actions{display:flex;gap:14px;align-items:center;margin-bottom:30px}
+.hero-note{font-size:13px;color:var(--faint)}
+.trust{display:flex;gap:26px;font-size:13px;color:var(--faint);flex-wrap:wrap}
+.trust span{display:flex;align-items:center;gap:7px}
+.trust svg{width:15px;height:15px;stroke:var(--green)}
+
+.terminal{background:var(--panel);border:1px solid var(--line);border-radius:20px;backdrop-filter:blur(20px);box-shadow:0 30px 80px rgba(0,0,0,.5),0 0 0 1px rgba(139,92,246,.08),0 0 60px rgba(56,189,248,.08);overflow:hidden;position:relative}
+.terminal::before{content:'';position:absolute;top:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,rgba(103,232,249,.6),transparent)}
+.term-head{display:flex;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted)}
+.dots span{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px}
+.term-head .mono{margin-left:auto;font-size:11px;color:var(--faint)}
+.term-body{padding:20px 22px;min-height:380px;font-size:13.5px}
+.ask{display:flex;gap:10px;align-items:flex-start;margin-bottom:18px}
+.ask .who{width:26px;height:26px;border-radius:8px;background:rgba(125,211,252,.12);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;font-family:'JetBrains Mono'}
+.ask .who.ai{background:linear-gradient(135deg,rgba(56,189,248,.25),rgba(139,92,246,.25));border-color:rgba(139,92,246,.4);color:var(--ice)}
+#typed{font-family:'JetBrains Mono';color:var(--text)}
+.caret{display:inline-block;width:8px;height:15px;background:var(--ice);vertical-align:-2px;animation:pulse 1s infinite}
+.ai-lines{display:flex;flex-direction:column;gap:9px;font-family:'JetBrains Mono';font-size:12.5px}
+.ai-line{opacity:0;transform:translateY(6px);transition:.4s;color:var(--muted)}
+.ai-line.on{opacity:1;transform:none}
+.ai-line b{color:var(--ice);font-weight:500}
+.ok{color:var(--green)}
+.verdict{margin-top:16px;padding:14px 16px;border-radius:12px;background:rgba(74,222,128,.07);border:1px solid rgba(74,222,128,.25);opacity:0;transform:translateY(8px);transition:.5s}
+.verdict.on{opacity:1;transform:none}
+.verdict .v-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:13px}
+.score{font-family:'Space Grotesk';font-weight:700;font-size:22px;color:var(--green)}
+.bars{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.bar-item{font-size:11px;color:var(--muted)}
+.bar-item .val{color:var(--text);font-weight:600;font-size:13px;font-family:'JetBrains Mono'}
+.bar{height:4px;border-radius:99px;background:rgba(255,255,255,.08);margin-top:5px;overflow:hidden}
+.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ice-dim),var(--violet));width:0;transition:width 1.2s cubic-bezier(.22,1,.36,1)}
+
+.strip{padding:44px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(10,15,30,.4)}
+.strip-in{display:grid;grid-template-columns:repeat(4,1fr);gap:24px;text-align:center}
+.stat .num{font-family:'Space Grotesk';font-size:clamp(28px,3vw,40px);font-weight:700;color:var(--text)}
+.stat .num em{font-style:normal;color:var(--ice)}
+.stat .lbl{font-size:13px;color:var(--faint);margin-top:4px}
+
+section.block{padding:110px 0 30px}
+.sec-eyebrow{font-family:'JetBrains Mono';font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--ice);margin-bottom:16px}
+.sec-title{font-size:clamp(30px,4vw,44px);font-weight:700;letter-spacing:-1px;line-height:1.12;max-width:640px;margin-bottom:16px}
+.sec-sub{color:var(--muted);max-width:560px;font-size:17px;margin-bottom:56px}
+
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:18px;margin-bottom:80px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:28px;backdrop-filter:blur(14px);position:relative;overflow:hidden;transition:.3s;opacity:0;transform:translateY(24px)}
+.card.reveal{opacity:1;transform:none}
+.card:hover{border-color:rgba(103,232,249,.35);transform:translateY(-4px);box-shadow:0 20px 50px rgba(0,0,0,.4),0 0 30px rgba(56,189,248,.08)}
+.card .glow-corner{position:absolute;top:-60px;right:-60px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.18),transparent 70%);pointer-events:none}
+.c-3{grid-column:span 3}.c-2{grid-column:span 2}.c-4{grid-column:span 4}.c-6{grid-column:span 6}
+.card .icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,rgba(56,189,248,.15),rgba(139,92,246,.15));border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;margin-bottom:18px}
+.card .icon svg{width:20px;height:20px;stroke:var(--ice);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.card h3{font-size:19px;margin-bottom:8px;font-weight:500}
+.card p{font-size:14px;color:var(--muted)}
+.tagline{font-family:'JetBrains Mono';font-size:11px;color:var(--violet-soft);margin-top:14px}
+.mini-chart{margin-top:18px;display:flex;align-items:flex-end;gap:5px;height:56px}
+.mini-chart i{flex:1;border-radius:4px 4px 0 0;background:linear-gradient(180deg,rgba(103,232,249,.7),rgba(139,92,246,.35));min-height:8%}
+.chat-demo{margin-top:16px;font-size:12.5px;font-family:'JetBrains Mono'}
+.chat-demo .row{padding:9px 12px;border-radius:10px;margin-bottom:8px;border:1px solid var(--line)}
+.chat-demo .u{background:rgba(255,255,255,.04);color:var(--muted)}
+.chat-demo .a{background:rgba(56,189,248,.06);border-color:rgba(56,189,248,.25);color:var(--text)}
+
+.brief{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center;margin-bottom:80px}
+.brief-card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:26px;backdrop-filter:blur(16px);box-shadow:0 24px 60px rgba(0,0,0,.45)}
+.brief-card .bc-head{display:flex;align-items:center;gap:10px;margin-bottom:18px;font-size:14px;font-weight:600}
+.bc-head .sun{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,var(--amber),#F97316);display:flex;align-items:center;justify-content:center;font-size:14px}
+.brief-item{display:flex;gap:12px;padding:13px 0;border-top:1px solid var(--line);font-size:13.5px}
+.brief-item .tag{flex-shrink:0;font-family:'JetBrains Mono';font-size:10.5px;padding:3px 9px;border-radius:6px;height:fit-content;letter-spacing:.5px}
+.t-done{background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.3)}
+.t-watch{background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.3)}
+.t-ask{background:rgba(139,92,246,.12);color:var(--violet-soft);border:1px solid rgba(139,92,246,.35)}
+.brief-item p{color:var(--muted)}
+.brief-item p b{color:var(--text);font-weight:600}
+.check-list{display:flex;flex-direction:column;gap:18px;margin-top:34px}
+.check-list li{display:flex;gap:14px;list-style:none;font-size:15.5px;color:var(--muted)}
+.check-list li b{color:var(--text);font-weight:600}
+.check-list .ck{width:24px;height:24px;border-radius:8px;background:rgba(103,232,249,.1);border:1px solid rgba(103,232,249,.35);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.check-list .ck svg{width:13px;height:13px;stroke:var(--ice);stroke-width:2.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+
+.vs{border:1px solid var(--line);border-radius:22px;overflow:hidden;margin-bottom:80px;background:rgba(10,15,30,.5);backdrop-filter:blur(12px)}
+.vs-row{display:grid;grid-template-columns:1.3fr 1fr 1fr;font-size:14.5px}
+.vs-row>div{padding:18px 26px;border-top:1px solid var(--line)}
+.vs-row.head>div{border-top:none;padding:22px 26px;font-family:'Space Grotesk';font-weight:600;font-size:16px}
+.vs-row>div:nth-child(2){background:rgba(56,189,248,.05);border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.vs-row.head>div:nth-child(2){color:var(--ice)}
+.vs-row>div:first-child{color:var(--muted)}
+.yes{color:var(--green)}.no{color:var(--faint)}
+
+.pricing{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:80px}
+.price-card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:26px 24px;backdrop-filter:blur(14px);display:flex;flex-direction:column;transition:.3s;position:relative}
+.price-card.agency{border-color:rgba(139,92,246,.5);box-shadow:0 0 50px rgba(139,92,246,.12)}
+.pop.v{background:linear-gradient(135deg,var(--violet),#D946EF)}
+.price-card:hover{transform:translateY(-4px)}
+.price-card.featured{border-color:rgba(103,232,249,.5);box-shadow:0 0 50px rgba(56,189,248,.15),inset 0 1px 0 rgba(255,255,255,.06)}
+.pop{position:absolute;top:-13px;left:50%;transform:translateX(-50%);font-size:11.5px;font-weight:600;padding:5px 14px;border-radius:99px;background:linear-gradient(135deg,var(--ice-dim),var(--violet));color:#fff;white-space:nowrap}
+.plan{font-family:'Space Grotesk';font-size:18px;font-weight:600;margin-bottom:6px}
+.plan-sub{font-size:13px;color:var(--faint);margin-bottom:20px}
+.price{font-family:'Space Grotesk';font-size:36px;font-weight:700;margin-bottom:2px}
+.price small{font-size:14px;color:var(--faint);font-weight:400;font-family:'Inter'}
+.per{font-size:12.5px;color:var(--faint);margin-bottom:24px}
+.feat{list-style:none;display:flex;flex-direction:column;gap:11px;font-size:14px;color:var(--muted);margin-bottom:28px;flex:1}
+.feat li{display:flex;gap:10px;align-items:flex-start}
+.feat li::before{content:'✓';color:var(--ice);font-weight:700;flex-shrink:0}
+.price-card .btn{width:100%;justify-content:center}
+
+.cta-final{text-align:center;padding:100px 0 110px;position:relative}
+.cta-final::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:640px;height:420px;background:radial-gradient(ellipse,rgba(139,92,246,.16),transparent 70%);pointer-events:none}
+.cta-final h2{font-size:clamp(32px,4.5vw,52px);font-weight:700;letter-spacing:-1.2px;margin-bottom:18px;position:relative}
+.cta-final p{color:var(--muted);font-size:17px;margin-bottom:36px;position:relative}
+
+footer{border-top:1px solid var(--line);padding:44px 0;font-size:13.5px;color:var(--faint)}
+.foot-in{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
+.foot-links{display:flex;gap:24px}
+.foot-links a:hover{color:var(--text)}
+
+.reveal-el{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.22,1,.36,1)}
+.reveal-el.on{opacity:1;transform:none}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.card,.reveal-el,.ai-line,.verdict{opacity:1!important;transform:none!important}}
+@media (max-width:1080px){.pricing{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:960px){
+  .hero{grid-template-columns:1fr;padding-top:60px}
+  .nav-links{display:none}
+  .strip-in{grid-template-columns:repeat(2,1fr);gap:32px}
+  .c-2,.c-3,.c-4{grid-column:span 6}
+  .brief{grid-template-columns:1fr}
+  .pricing{grid-template-columns:1fr}
+  .vs-row{grid-template-columns:1.2fr 1fr 1fr;font-size:12.5px}
+  .vs-row>div{padding:13px 12px}
+}
+</style>
+</head>
+<body>
+<div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="grid-overlay"></div>
+
+<nav>
+  <div class="nav-in">
+    <a class="logo" href="#"><span class="logo-dot"></span>XENON<sup>54</sup></a>
+    <div class="nav-links">
+      <a href="#agent">Agent</a><a href="#features">Platform</a><a href="#agencies">Agencies</a><a href="#compare">Why Xenon</a><a href="#pricing">Pricing</a>
+    </div>
+    <div class="nav-cta">
+      <a class="btn btn-ghost" href="#">Sign in</a>
+      <a class="btn btn-glow" href="#pricing">Start free</a>
+    </div>
+  </div>
+</nav>
+
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <span class="eyebrow"><span class="pulse"></span>Agent v2 is live — now with autonomous PPC</span>
+      <h1>Your marketplace business, run by an <span class="grad">AI that never sleeps</span></h1>
+      <p class="sub">Xenon replaces 30 disconnected seller tools with one agent. Ask it anything about your Amazon, Walmart, or TikTok Shop business — it researches, optimizes, and acts while you decide.</p>
+      <div class="hero-actions">
+        <a class="btn btn-glow btn-lg" href="#pricing">Start free — no card</a>
+        <a class="btn btn-ghost btn-lg" href="#agent">Watch the agent work ↓</a>
+      </div>
+      <div class="trust">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Free tier forever</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Connects in 90 seconds</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Cancel anytime</span>
+      </div>
+    </div>
+
+    <div class="terminal" id="agent">
+      <div class="term-head">
+        <span class="dots"><span style="background:#F87171"></span><span style="background:#FBBF24"></span><span style="background:#4ADE80"></span></span>
+        Xenon Agent
+        <span class="mono">live · us-east</span>
+      </div>
+      <div class="term-body">
+        <div class="ask">
+          <span class="who">you</span>
+          <span><span id="typed"></span><span class="caret" id="caret"></span></span>
+        </div>
+        <div class="ask" id="ai-block" style="display:none">
+          <span class="who ai">xn</span>
+          <div style="flex:1">
+            <div class="ai-lines">
+              <div class="ai-line" data-step="1">→ scanning <b>2,847 listings</b> in pet supplies…</div>
+              <div class="ai-line" data-step="2">→ pulling 24-month demand curve <span class="ok">✓</span></div>
+              <div class="ai-line" data-step="3">→ modeling fees, PPC cost + return rate <span class="ok">✓</span></div>
+              <div class="ai-line" data-step="4">→ checking saturation + trend lifecycle <span class="ok">✓</span></div>
+            </div>
+            <div class="verdict" id="verdict">
+              <div class="v-head"><span><b>GPS dog fence, wireless</b> — strong opportunity</span><span class="score">87<span style="font-size:12px;color:var(--faint)">/100</span></span></div>
+              <div class="bars">
+                <div class="bar-item">Demand<div class="val">31k/mo</div><div class="bar"><i data-w="82%"></i></div></div>
+                <div class="bar-item">Net margin<div class="val">34%</div><div class="bar"><i data-w="68%"></i></div></div>
+                <div class="bar-item">Competition<div class="val">Low</div><div class="bar"><i data-w="30%"></i></div></div>
+              </div>
+              <div style="margin-top:12px;font-size:12px;color:var(--muted)">Suggested next step: I can draft the listing + launch plan. <span style="color:var(--ice)">Run it →</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="strip">
+  <div class="wrap strip-in">
+    <div class="stat reveal-el"><div class="num" data-count="41" data-suffix="%">0%</div><div class="lbl">avg. profit lift in 90 days</div></div>
+    <div class="stat reveal-el"><div class="num" data-count="19" data-suffix="hrs">0</div><div class="lbl">saved per week, per seller</div></div>
+    <div class="stat reveal-el"><div class="num" data-count="4" data-suffix=" mkts">0</div><div class="lbl">Amazon · Walmart · TikTok · Shopify</div></div>
+    <div class="stat reveal-el"><div class="num"><em>1</em> agent</div><div class="lbl">instead of 30 tools</div></div>
+  </div>
+</div>
+
+<main class="wrap">
+  <section class="block" id="features">
+    <div class="sec-eyebrow reveal-el">// the platform</div>
+    <h2 class="sec-title reveal-el">Legacy suites give you 30 tools. Xenon gives you answers.</h2>
+    <p class="sec-sub reveal-el">No dashboards to learn, no acronyms to memorize. Every capability below is something you simply ask for.</p>
+
+    <div class="bento">
+      <div class="card c-3">
+        <div class="glow-corner"></div>
+        <div class="icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+        <h3>Conversational research</h3>
+        <p>"Why did my competitor outrank me this week?" The agent runs reverse-keyword lookups, traffic analysis, and pricing checks — then answers in plain English with the receipts.</p>
+        <div class="chat-demo">
+          <div class="row u">find me a product under $40 with 30%+ margin</div>
+          <div class="row a">Found 6 candidates. Top pick scores 87/100 — want the launch plan?</div>
+        </div>
+      </div>
+      <div class="card c-3">
+        <div class="glow-corner"></div>
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg></div>
+        <h3>Predictive demand engine</h3>
+        <p>Legacy tools show you last month. Xenon models the next one — spotting TikTok virality signals 2–4 weeks before they hit Amazon search volume.</p>
+        <div class="mini-chart">
+          <i style="height:22%"></i><i style="height:30%"></i><i style="height:26%"></i><i style="height:38%"></i><i style="height:46%"></i><i style="height:42%"></i><i style="height:58%"></i><i style="height:72%"></i><i style="height:66%"></i><i style="height:88%"></i><i style="height:100%"></i>
+        </div>
+        <div class="tagline">demand forecast · 92% confidence</div>
+      </div>
+      <div class="card c-2">
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4z"/></svg></div>
+        <h3>Goal-based ads</h3>
+        <p>Don't write bid rules. Say "keep ACoS under 25%" — the agent tunes bids, dayparts, and negatives overnight.</p>
+      </div>
+      <div class="card c-2">
+        <div class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 10h8M8 14h5"/></svg></div>
+        <h3>Profit-first analytics</h3>
+        <p>True net profit per SKU, live — fees, returns, storage, ad spend included. With plain-English explanations for every dip.</p>
+      </div>
+      <div class="card c-2">
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.5"/></svg></div>
+        <h3>Autonomous playbooks</h3>
+        <p>"Watch this niche and ping me when a product hits my criteria." Set it once. The agent hunts forever.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" style="padding-top:40px">
+    <div class="brief">
+      <div class="reveal-el">
+        <div class="sec-eyebrow">// every morning, 7:00 am</div>
+        <h2 class="sec-title" style="font-size:clamp(28px,3.4vw,38px)">Wake up to a business that already worked the night shift</h2>
+        <ul class="check-list">
+          <li><span class="ck"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span><b>What happened</b> — sales, rank moves, competitor changes, reviews. Summarized, not dumped.</span></li>
+          <li><span class="ck"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span><b>What the agent did</b> — every autonomous action logged, explained, and reversible.</span></li>
+          <li><span class="ck"><svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></span><span><b>What needs you</b> — only the decisions that genuinely require a human. Usually two or three.</span></li>
+        </ul>
+      </div>
+      <div class="brief-card reveal-el">
+        <div class="bc-head"><span class="sun">☀</span>Your morning briefing — Tue, Jul 7</div>
+        <div class="brief-item"><span class="tag t-done">DONE</span><p>Lowered bids on 14 wasted keywords overnight. <b>Saved $86</b>, ACoS now 22.4%.</p></div>
+        <div class="brief-item"><span class="tag t-done">DONE</span><p>Filed a fee-overcharge claim on 3 units. <b>$41 recovered.</b></p></div>
+        <div class="brief-item"><span class="tag t-watch">WATCH</span><p>Competitor <b>PetSafe Pro</b> dropped price 12%. Holding your price — margin still healthy.</p></div>
+        <div class="brief-item"><span class="tag t-ask">ASK</span><p>Restock alert: <b>GPS Collar V2</b> runs dry in 18 days. Approve a 400-unit PO?</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="agencies" style="padding-top:20px">
+    <div class="sec-eyebrow reveal-el" style="color:var(--violet-soft)">// for agencies</div>
+    <h2 class="sec-title reveal-el">Run your whole agency on Xenon — under your own brand</h2>
+    <p class="sec-sub reveal-el">Manage every client from one workspace, give each of them a beautiful portal, and get paid — all without them ever seeing our name.</p>
+
+    <div class="bento">
+      <div class="card c-3">
+        <div class="glow-corner"></div>
+        <div class="icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></div>
+        <h3>Client projects and portals</h3>
+        <p>Spin up a project per customer with its own data, playbooks, and agent. Each client gets a magic-link login to a clean read-only portal: results, briefings, and a log of everything you did for them — nothing they shouldn't see.</p>
+        <div class="chat-demo">
+          <div class="row a">Client portal · PetGear Co — 3 approvals pending, ROI report ready</div>
+        </div>
+      </div>
+      <div class="card c-3">
+        <div class="glow-corner"></div>
+        <div class="icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5c0-1 1-1.8 2.5-1.8s2.5.8 2.5 1.8-1 1.6-2.5 2-2.5 1-2.5 2 1 1.8 2.5 1.8 2.5-.8 2.5-1.8"/></svg></div>
+        <h3>Bill clients on your Stripe</h3>
+        <p>Connect your own Stripe account and invoice retainers, one-off projects, or software markups straight from the portal. Money flows directly to you — Xenon never touches your funds.</p>
+        <div class="tagline">stripe connect · recurring retainers · your rates</div>
+      </div>
+      <div class="card c-2">
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 4v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7z"/></svg></div>
+        <h3>Full white-label</h3>
+        <p>Your logo, colors, and custom domain — portal.youragency.com. Reports, emails, and briefings all carry your brand.</p>
+      </div>
+      <div class="card c-2">
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z"/><path d="M14 3v6h6M9 14l2 2 4-4"/></svg></div>
+        <h3>AI proposal generator</h3>
+        <p>Drop in a prospect's store URL and get a branded audit showing the profit they're leaving behind. Close deals with data, not decks.</p>
+      </div>
+      <div class="card c-2">
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M17 8a5 5 0 10-10 0c0 5-2 6-2 6h14s-2-1-2-6M10.5 20a1.7 1.7 0 003 0"/></svg></div>
+        <h3>Live report sites</h3>
+        <p>Every client gets an always-current, branded report microsite — plus 20–30% recurring commission on anyone you refer.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="compare" style="padding-top:20px">
+    <div class="sec-eyebrow reveal-el">// why switch</div>
+    <h2 class="sec-title reveal-el">Built for 2026, not retrofitted from 2015</h2>
+    <p class="sec-sub reveal-el">Legacy all-in-one suites bolted AI onto a decade-old toolbox. Xenon was born agent-first.</p>
+    <div class="vs reveal-el">
+      <div class="vs-row head"><div></div><div>Xenon</div><div>Legacy suites</div></div>
+      <div class="vs-row"><div>Learning curve</div><div class="yes">Just ask in plain English</div><div class="no">30+ tools to master</div></div>
+      <div class="vs-row"><div>Advertising</div><div class="yes">Goal-based, self-tuning</div><div class="no">Manual rules + bids</div></div>
+      <div class="vs-row"><div>Data direction</div><div class="yes">Predictive (2–4 wks ahead)</div><div class="no">Historical lookback</div></div>
+      <div class="vs-row"><div>Daily workflow</div><div class="yes">One AI briefing</div><div class="no">Dashboard spelunking</div></div>
+      <div class="vs-row"><div>Entry price</div><div class="yes">Free tier, forever</div><div class="no">$99–129/mo to start</div></div>
+    </div>
+  </section>
+
+  <section class="block" id="pricing" style="padding-top:20px">
+    <div class="sec-eyebrow reveal-el">// pricing</div>
+    <h2 class="sec-title reveal-el">Fair pricing that scales with you — not against you</h2>
+    <p class="sec-sub reveal-el">No usage traps, no surprise tier walls. Every plan includes every capability; you only pay for agent horsepower.</p>
+    <div class="pricing">
+      <div class="price-card reveal-el">
+        <div class="plan">Starter</div>
+        <div class="plan-sub">Validate your first product</div>
+        <div class="price">$0<small>/mo</small></div>
+        <div class="per">Free forever</div>
+        <ul class="feat">
+          <li>25 agent queries / month</li>
+          <li>Product + keyword research</li>
+          <li>Profit dashboard, 1 marketplace</li>
+          <li>Weekly AI briefing</li>
+        </ul>
+        <a class="btn btn-ghost" href="#">Start free</a>
+      </div>
+      <div class="price-card featured reveal-el">
+        <span class="pop">Most popular</span>
+        <div class="plan">Pro</div>
+        <div class="plan-sub">Sellers doing $5k–100k/mo</div>
+        <div class="price">$49<small>/mo</small></div>
+        <div class="per">or $39/mo billed yearly</div>
+        <ul class="feat">
+          <li>Unlimited agent queries</li>
+          <li>Autonomous PPC + playbooks</li>
+          <li>All 4 marketplaces</li>
+          <li>Daily briefing + mobile alerts</li>
+          <li>Predictive demand engine</li>
+        </ul>
+        <a class="btn btn-glow" href="#">Start 14-day trial</a>
+      </div>
+      <div class="price-card agency reveal-el">
+        <span class="pop v">Built for agencies</span>
+        <div class="plan">Agency</div>
+        <div class="plan-sub">Consultants and agencies</div>
+        <div class="price">$199<small>/mo</small></div>
+        <div class="per">5 clients included · +$25 per extra client</div>
+        <ul class="feat">
+          <li>Everything in Pro, per client</li>
+          <li>Client portals — free unlimited viewers</li>
+          <li>White-label + custom domain</li>
+          <li>Stripe Connect client billing</li>
+          <li>Proposal generator + directory listing</li>
+          <li>20–30% referral commissions</li>
+        </ul>
+        <a class="btn btn-glow" href="#">Start agency trial</a>
+      </div>
+      <div class="price-card reveal-el">
+        <div class="plan">Enterprise</div>
+        <div class="plan-sub">Brands at scale</div>
+        <div class="price">Custom</div>
+        <div class="per">Annual agreement</div>
+        <ul class="feat">
+          <li>Everything in Pro + Agency</li>
+          <li>SSO, audit logs, SLA</li>
+          <li>API + custom playbooks</li>
+          <li>Dedicated success manager</li>
+        </ul>
+        <a class="btn btn-ghost" href="#">Talk to us</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-final">
+    <h2 class="reveal-el">The future of selling isn't more tools.<br><span class="grad">It's fewer decisions.</span></h2>
+    <p class="reveal-el">Connect your store in 90 seconds and let the agent take the night shift.</p>
+    <a class="btn btn-glow btn-lg reveal-el" href="#">Start free — no card required</a>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot-in">
+    <a class="logo" href="#" style="font-size:16px"><span class="logo-dot" style="width:20px;height:20px"></span>XENON<sup>54</sup></a>
+    <div class="foot-links"><a href="#">Docs</a><a href="#">Changelog</a><a href="#">Security</a><a href="#">Careers</a><a href="#">Contact</a></div>
+    <span>© 2026 Xenon Labs. The element that glows.</span>
+  </div>
+</footer>
+
+<script>
+const reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const q="find me a profitable product in pet supplies";
+const typed=document.getElementById('typed'),caret=document.getElementById('caret'),aiBlock=document.getElementById('ai-block');
+function startAI(){
+  aiBlock.style.display='flex';caret.style.display='none';
+  const lines=document.querySelectorAll('.ai-line');
+  lines.forEach((l,i)=>setTimeout(()=>l.classList.add('on'),450*(i+1)));
+  setTimeout(()=>{
+    document.getElementById('verdict').classList.add('on');
+    document.querySelectorAll('.bar i').forEach(b=>{requestAnimationFrame(()=>b.style.width=b.dataset.w)});
+  },450*lines.length+500);
+}
+if(reduce){typed.textContent=q;startAI();}
+else{let i=0;(function type(){if(i<=q.length){typed.textContent=q.slice(0,i);i++;setTimeout(type,42)}else setTimeout(startAI,350)})();}
+
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting)return;
+  e.target.classList.add(e.target.classList.contains('card')?'reveal':'on');
+  const n=e.target.querySelector?e.target.querySelector('[data-count]'):null;
+  const num=e.target.matches&&e.target.matches('.stat')?e.target.querySelector('[data-count]'):n;
+  if(num&&!num.dataset.done){num.dataset.done=1;animateCount(num)}
+  io.unobserve(e.target);
+}),{threshold:.18});
+document.querySelectorAll('.card,.reveal-el,.stat').forEach(el=>io.observe(el));
+function animateCount(el){
+  const end=+el.dataset.count,suf=el.dataset.suffix||'';
+  if(reduce){el.textContent=end+suf;return}
+  const t0=performance.now(),dur=1400;
+  (function f(t){const p=Math.min((t-t0)/dur,1),v=Math.round(end*(1-Math.pow(1-p,3)));el.textContent=v+suf;if(p<1)requestAnimationFrame(f)})(t0);
+}
+document.querySelectorAll('.btn-glow').forEach(b=>{
+  b.addEventListener('mousemove',e=>{const r=b.getBoundingClientRect();b.style.transform=`translate(${(e.clientX-r.left-r.width/2)*.06}px,${(e.clientY-r.top-r.height/2)*.15-2}px)`});
+  b.addEventListener('mouseleave',()=>b.style.transform='');
+});
+</script>
+</body>
+</html>
