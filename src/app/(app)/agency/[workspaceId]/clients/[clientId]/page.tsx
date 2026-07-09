@@ -4,10 +4,12 @@ import { requireUser } from "@/lib/auth/session";
 import { requireMembership } from "@/lib/agency/workspace";
 import { assertClientAccess } from "@/lib/agency/clients";
 import { listWorkItems } from "@/lib/agency/workitems";
-import { ForbiddenError, NotFoundError } from "@/lib/auth/rbac";
+import { listPortalUsers, listClientApprovals } from "@/lib/agency/portal-users";
+import { ForbiddenError, NotFoundError, hasRole } from "@/lib/auth/rbac";
 import { prisma } from "@/lib/db/prisma";
 import { Logo, Panel } from "@/components/ui";
 import { WorkItems } from "./work-items";
+import { AgencyClientExtras } from "./agency-extras";
 
 export default async function ClientPage({
   params,
@@ -32,10 +34,12 @@ export default async function ClientPage({
   if (client.workspaceId !== workspaceId) notFound();
 
   const items = await listWorkItems(membership, clientId);
-  const workspace = await prisma.workspace.findUnique({
-    where: { id: workspaceId },
-    select: { name: true },
-  });
+  const canManage = hasRole(membership.role, "MANAGER");
+  const [workspace, portalUsers, approvals] = await Promise.all([
+    prisma.workspace.findUnique({ where: { id: workspaceId }, select: { name: true } }),
+    canManage ? listPortalUsers(membership, clientId) : Promise.resolve([]),
+    canManage ? listClientApprovals(membership, clientId) : Promise.resolve([]),
+  ]);
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-8">
@@ -75,6 +79,45 @@ export default async function ClientPage({
             />
           </Panel>
         </div>
+
+        {canManage && (
+          <div className="mt-8 space-y-4">
+            <h2 className="text-lg font-semibold">Client portal</h2>
+            <Panel>
+              <AgencyClientExtras clientId={clientId} />
+            </Panel>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Panel>
+                <h3 className="text-sm font-semibold text-muted">Portal users</h3>
+                {portalUsers.length === 0 ? (
+                  <p className="mt-2 text-sm text-faint">None yet.</p>
+                ) : (
+                  <ul className="mt-2 space-y-1 text-sm">
+                    {portalUsers.map((p) => (
+                      <li key={p.id}>{p.email}</li>
+                    ))}
+                  </ul>
+                )}
+              </Panel>
+              <Panel>
+                <h3 className="text-sm font-semibold text-muted">Approvals</h3>
+                {approvals.length === 0 ? (
+                  <p className="mt-2 text-sm text-faint">None yet.</p>
+                ) : (
+                  <ul className="mt-2 space-y-1 text-sm">
+                    {approvals.map((a) => (
+                      <li key={a.id} className="flex justify-between">
+                        <span>{a.title}</span>
+                        <span className="font-data text-xs text-muted">{a.status}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </Panel>
+            </div>
+          </div>
+        )}
       </section>
     </main>
   );

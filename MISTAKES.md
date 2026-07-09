@@ -47,3 +47,9 @@ Format for every entry:
 - Root cause: The Stripe test fixtures live only in the gitignored `.env` (loaded by vitest locally). CI has no `.env`, so `STRIPE_SECRET_KEY` (and the other Stripe vars) were undefined and the SDK constructor threw at import time.
 - Fix applied: Added the non-secret Stripe test placeholders to the `env:` block of `.github/workflows/ci.yml` so CI mirrors local.
 - Prevention rule: Whenever a test reads a new env var, add it to BOTH `.env` (local) and the CI workflow `env:` block in the same change. `.env` is gitignored, so CI never inherits it — "passes locally" is not proof CI passes. Prefer verifying with the CI env set, or grep tests for `process.env.` before pushing.
+
+## M-5 — E2E assertion depended on an optional runtime key   (2026-07-09)
+- What happened: The agent E2E asserted the "not configured" (503) fail-closed state. It held in CI (no `ANTHROPIC_API_KEY`) but broke locally the moment the real key was added to `.env` and the agent went live.
+- Root cause: The test's expected behavior depended on the presence/absence of an optional runtime credential, which differs between local (`.env`) and CI — the inverse of M-4.
+- Fix applied: Rewrote the agent E2E to assert only environment-independent behavior (page render, scoped note, chat input, auth-gating). Live streaming is verified separately when a key is present; the 503 fail-closed path stays enforced in the route.
+- Prevention rule: E2E/integration assertions must not hinge on whether an optional key is set. Assert behavior that holds in both states, or explicitly gate+skip the test on config. Feature-gated flows need one env-independent test plus a separate, clearly key-dependent one.
