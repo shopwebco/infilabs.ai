@@ -1,10 +1,12 @@
 import { redirect } from "next/navigation";
 import { requireClientScope } from "@/lib/portal/scope";
 import { getPortalView } from "@/lib/portal/data";
+import { getBrandForClientProject } from "@/lib/whitelabel";
 import { ForbiddenError } from "@/lib/auth/rbac";
-import { Logo, Panel } from "@/components/ui";
+import { Panel } from "@/components/ui";
 import { ApprovalActions } from "./approval-actions";
 import { PortalLogoutButton } from "./logout-button";
+import { PortalBrandHeader } from "./brand-header";
 
 const STATUS_LABEL: Record<string, string> = {
   PENDING: "Awaiting your decision",
@@ -33,7 +35,10 @@ export default async function PortalHome({
     throw err;
   }
 
-  const { client, approvals, workItems, actions } = await getPortalView(tenant);
+  const [{ client, approvals, workItems, actions }, brand] = await Promise.all([
+    getPortalView(tenant),
+    getBrandForClientProject(tenant),
+  ]);
   if (!client) redirect(`/portal/${tenant}/login`);
 
   const pending = approvals.filter((a) => a.status === "PENDING");
@@ -41,13 +46,15 @@ export default async function PortalHome({
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-8">
-      <header className="flex items-center justify-between border-b border-line pb-6">
-        <Logo />
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-muted">{client.name}</span>
-          <PortalLogoutButton tenant={tenant} />
-        </div>
-      </header>
+      <PortalBrandHeader
+        brand={brand}
+        right={
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted">{client.name}</span>
+            <PortalLogoutButton tenant={tenant} />
+          </div>
+        }
+      />
 
       <section className="space-y-8 py-8">
         <div>

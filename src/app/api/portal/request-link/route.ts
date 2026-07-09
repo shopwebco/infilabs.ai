@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db/prisma";
 import { requestLinkSchema } from "@/lib/validation/portal";
 import { issueMagicLink } from "@/lib/portal/tokens";
 import { isEmailConfigured, sendEmail, magicLinkEmail } from "@/lib/email/resend";
+import { getEmailBrand } from "@/lib/whitelabel";
 import { appUrl } from "@/lib/stripe/checkout";
 
 export const runtime = "nodejs";
@@ -14,25 +15,36 @@ export async function POST(req: Request) {
   }
   const email = parsed.data.email.toLowerCase().trim();
 
-  const portalUser = await prisma.clientPortalUser.findUnique({
-    where: {
-      clientProjectId_email: { clientProjectId: parsed.data.clientProjectId, email },
-    },
-    select: { id: true, clientProject: { select: { name: true } } },
-  });
+  // Resolve the portal user either by explicit client, or by email within a
+  // workspace (custom-domain login, where only the host is known).
+  const portalUser = parsed.data.clientProjectId
+    ? await prisma.clientPortalUser.findUnique({
+        where: {
+          clientProjectId_email: {
+            clientProjectId: parsed.data.clientProjectId,
+            email,
+          },
+        },
+        select: { id: true, clientProjectId: true },
+      })
+    : await prisma.clientPortalUser.findFirst({
+        where: { email, clientProject: { workspaceId: parsed.data.workspaceId } },
+        select: { id: true, clientProjectId: true },
+      });
 
-  // Do not reveal whether an email is registered.
+  // Never reveal whether an email is registered.
   if (!portalUser) {
     return NextResponse.json({ sent: true }, { status: 200 });
   }
 
   const raw = await issueMagicLink(portalUser.id);
-  const link = `${appUrl()}/portal/${parsed.data.clientProjectId}/verify?token=${raw}`;
+  const link = `${appUrl()}/portal/${portalUser.clientProjectId}/verify?token=${raw}`;
+  const brand = await getEmailBrand(portalUser.clientProjectId);
 
   if (isEmailConfigured()) {
-    const { subject, html } = magicLinkEmail(link, portalUser.clientProject.name);
+    const { subject, html } = magicLinkEmail(link, brand.brandName);
     try {
-      await sendEmail({ to: email, subject, html });
+      await sendEmail({ to: email, subject, html, from: brand.emailFrom });
     } catch (err) {
       console.error("magic link email failed", err);
       return NextResponse.json({ error: "Could not send email." }, { status: 502 });
@@ -40,6 +52,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ sent: true }, { status: 200 });
   }
 
-  // Email not configured (dev): return the link so the flow is usable/testable.
+  // Email not configured (dev): return the link so the flow stays usable/testable.
   return NextResponse.json({ sent: false, devLink: link }, { status: 200 });
 }

@@ -14,6 +14,7 @@ export async function sendEmail(input: {
   to: string;
   subject: string;
   html: string;
+  from?: string | null;
 }): Promise<{ id: string }> {
   const key = process.env.RESEND_API_KEY;
   if (!key) {
@@ -26,7 +27,7 @@ export async function sendEmail(input: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: emailFrom(),
+      from: input.from || emailFrom(),
       to: [input.to],
       subject: input.subject,
       html: input.html,
@@ -40,12 +41,13 @@ export async function sendEmail(input: {
   return data;
 }
 
-export function magicLinkEmail(link: string, clientName: string): {
+/** Branded magic-link email. `brandName` carries the agency's white-label identity. */
+export function magicLinkEmail(link: string, brandName: string): {
   subject: string;
   html: string;
 } {
   return {
-    subject: `Your sign-in link for ${clientName}`,
-    html: `<p>Click to sign in to your ${clientName} portal. This link is single-use and expires in 15 minutes.</p><p><a href="${link}">Sign in</a></p><p>If you didn't request this, you can ignore this email.</p>`,
+    subject: `Your ${brandName} sign-in link`,
+    html: `<p>Click to sign in to your ${brandName} portal. This link is single-use and expires in 15 minutes.</p><p><a href="${link}">Sign in</a></p><p>If you didn't request this, you can ignore this email.</p>`,
   };
 }

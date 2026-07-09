@@ -4,9 +4,11 @@ import { requireUser } from "@/lib/auth/session";
 import { requireMembership } from "@/lib/agency/workspace";
 import { listWorkspaceMembers } from "@/lib/agency/clients";
 import { listPendingInvites } from "@/lib/agency/invites";
+import { getWhiteLabel } from "@/lib/whitelabel";
 import { ForbiddenError } from "@/lib/auth/rbac";
 import { Logo, Panel } from "@/components/ui";
 import { InviteForm } from "./invite-form";
+import { WhiteLabelForm } from "./whitelabel-form";
 
 export default async function TeamPage({
   params,
@@ -25,9 +27,10 @@ export default async function TeamPage({
     throw err;
   }
 
-  const [members, invites] = await Promise.all([
+  const [members, invites, whiteLabel] = await Promise.all([
     listWorkspaceMembers(workspaceId),
     listPendingInvites(membership),
+    getWhiteLabel(workspaceId),
   ]);
 
   return (
@@ -80,6 +83,27 @@ export default async function TeamPage({
                 ))}
               </ul>
             )}
+          </Panel>
+        </div>
+
+        <div>
+          <h2 className="text-lg font-semibold">White-label</h2>
+          <p className="mt-1 text-sm text-muted">
+            Brand the client portal and emails. Custom domains resolve to this
+            workspace.
+          </p>
+          <Panel className="mt-4">
+            <WhiteLabelForm
+              workspaceId={workspaceId}
+              initial={{
+                brandName: whiteLabel?.brandName ?? "",
+                accentColor: whiteLabel?.accentColor ?? "#2DD4BF",
+                logoUrl: whiteLabel?.logoUrl ?? "",
+                customDomain: whiteLabel?.customDomain ?? "",
+                emailFrom: whiteLabel?.emailFrom ?? "",
+                hideXenon: whiteLabel?.hideXenon ?? true,
+              }}
+            />
           </Panel>
         </div>
       </section>
