@@ -72,6 +72,11 @@ enum IntegrationStatus {
   DISCONNECTED
 }
 
+enum BriefingCadence {
+  DAILY
+  WEEKLY
+}
+
 model User {
   id               String       @id @default(cuid())
   email            String       @unique
@@ -96,6 +101,7 @@ model Workspace {
   clientProjects         ClientProject[]
   whiteLabel             WhiteLabelSettings?
   invites                WorkspaceInvite[]
+  proposals              Proposal[]
   referralCode           String              @unique @default(cuid())
   directoryListed        Boolean             @default(false)
   createdAt              DateTime            @default(now())
@@ -267,6 +273,33 @@ model ProcessedStripeEvent {
   id        String   @id // Stripe event id (evt_...) — presence = already handled (idempotency)
   type      String
   createdAt DateTime @default(now())
+}
+
+model Briefing {
+  id                  String          @id @default(cuid())
+  scopeType           String // 'USER' | 'CLIENT'
+  scopeId             String
+  cadence             BriefingCadence
+  periodStart         DateTime
+  periodEnd           DateTime
+  body                Json // derived ONLY from real AgentAction/Approval rows
+  valueRecoveredCents Int             @default(0)
+  createdAt           DateTime        @default(now())
+
+  @@index([scopeType, scopeId])
+}
+
+model Proposal {
+  id          String    @id @default(cuid())
+  workspaceId String
+  title       String
+  prospectUrl String?
+  body        Json // agent-generated from provided inputs; no invented metrics
+  publicSlug  String    @unique @default(cuid())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@index([workspaceId])
 }
 
 model ReferralConversion {

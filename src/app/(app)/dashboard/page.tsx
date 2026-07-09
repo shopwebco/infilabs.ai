@@ -65,6 +65,14 @@ export default async function DashboardPage() {
                 </dd>
               </div>
               <div className="flex justify-between">
+                <dt className="text-muted">Briefings</dt>
+                <dd>
+                  <Link href="/dashboard/briefings" className="text-ice hover:underline">
+                    View briefings →
+                  </Link>
+                </dd>
+              </div>
+              <div className="flex justify-between">
                 <dt className="text-muted">Member since</dt>
                 <dd className="font-data">
                   {user.createdAt.toISOString().slice(0, 10)}

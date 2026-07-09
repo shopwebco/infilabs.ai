@@ -3,10 +3,13 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/session";
 import { requireMembership } from "@/lib/agency/workspace";
 import { listAccessibleClients } from "@/lib/agency/clients";
+import { listProposals } from "@/lib/proposals";
+import { appUrl } from "@/lib/stripe/checkout";
 import { hasRole, ForbiddenError } from "@/lib/auth/rbac";
 import { prisma } from "@/lib/db/prisma";
 import { Logo, Panel } from "@/components/ui";
 import { CreateClientForm } from "./create-client-form";
+import { ProposalsPanel } from "./proposals-panel";
 
 export default async function WorkspacePage({
   params,
@@ -24,17 +27,19 @@ export default async function WorkspacePage({
     throw err;
   }
 
-  const [workspace, clients] = await Promise.all([
+  const canManage = hasRole(membership.role, "MANAGER");
+  const [workspace, clients, proposals] = await Promise.all([
     prisma.workspace.findUnique({
       where: { id: workspaceId },
-      select: { name: true },
+      select: { name: true, referralCode: true },
     }),
     listAccessibleClients(membership),
+    canManage ? listProposals(membership) : Promise.resolve([]),
   ]);
   if (!workspace) notFound();
 
-  const canManage = hasRole(membership.role, "MANAGER");
   const isAdmin = membership.role === "ADMIN";
+  const referralUrl = `${appUrl()}/signup?ref=${workspace.referralCode}`;
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-8">
@@ -90,6 +95,44 @@ export default async function WorkspacePage({
             <Panel>
               <CreateClientForm workspaceId={workspaceId} />
             </Panel>
+          </div>
+        )}
+
+        <div className="mt-10">
+          <h2 className="text-lg font-semibold">Referrals</h2>
+          <Panel className="mt-3">
+            <p className="text-sm text-muted">
+              Share your referral link — you earn recurring commission on signups.
+            </p>
+            <code className="mt-2 block break-all font-data text-xs text-ice">
+              {referralUrl}
+            </code>
+          </Panel>
+        </div>
+
+        {canManage && (
+          <div className="mt-10">
+            <h2 className="text-lg font-semibold">Proposals</h2>
+            <p className="mt-1 text-sm text-muted">
+              Generate a branded, shareable audit page for a prospect.
+            </p>
+            <Panel className="mt-3">
+              <ProposalsPanel workspaceId={workspaceId} />
+            </Panel>
+            {proposals.length > 0 && (
+              <ul className="mt-3 space-y-1 text-sm">
+                {proposals.map((p) => (
+                  <li key={p.id}>
+                    <a
+                      href={`/proposals/${p.publicSlug}`}
+                      className="text-ice hover:underline"
+                    >
+                      {p.title}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
       </section>

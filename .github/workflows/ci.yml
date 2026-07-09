@@ -35,6 +35,7 @@ jobs:
       STRIPE_WEBHOOK_SECRET: whsec_ci_test_signing_secret
       STRIPE_PRICE_PRO: price_ci_pro
       STRIPE_PRICE_AGENCY: price_ci_agency
+      CRON_SECRET: ci-cron-secret
 
     steps:
       - uses: actions/checkout@v4

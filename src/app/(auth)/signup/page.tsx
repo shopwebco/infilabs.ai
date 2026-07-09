@@ -2,7 +2,12 @@ import Link from "next/link";
 import { Panel } from "@/components/ui";
 import { SignupForm } from "./signup-form";
 
-export default function SignupPage() {
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ref?: string }>;
+}) {
+  const { ref } = await searchParams;
   return (
     <Panel>
       <h1 className="text-xl font-semibold">Create your account</h1>
@@ -10,7 +15,7 @@ export default function SignupPage() {
         Start on the free Starter plan. No card required.
       </p>
       <div className="mt-6">
-        <SignupForm />
+        <SignupForm referralCode={ref} />
       </div>
       <p className="mt-6 text-center text-sm text-muted">
         Already have an account?{" "}
