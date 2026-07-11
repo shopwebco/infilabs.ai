@@ -1,5 +1,13 @@
 import { defineConfig, devices } from "@playwright/test";
 
+// The test runner process needs DATABASE_URL etc. for prisma-backed seeding
+// (Next.js loads .env for the app; the runner does not). Node 22 can load it.
+try {
+  process.loadEnvFile(".env");
+} catch {
+  // In CI, real env vars are already present.
+}
+
 const PORT = 3100;
 const baseURL = `http://127.0.0.1:${PORT}`;
 

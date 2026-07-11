@@ -8,6 +8,7 @@ export const credentialsSchema = z.object({
 
 export const signupSchema = credentialsSchema.extend({
   name: z.string().trim().min(1, "Name is required").max(120),
+  referralCode: z.string().trim().max(64).optional(),
 });
 
 export type Credentials = z.infer<typeof credentialsSchema>;
