@@ -6,7 +6,7 @@ import { prisma } from "@/lib/db/prisma";
  * client-facing query (invariant 2), enforced here in the query layer.
  */
 export async function getPortalView(clientProjectId: string) {
-  const [client, approvals, workItems, actions] = await Promise.all([
+  const [client, approvals, workItems, actions, invoices] = await Promise.all([
     prisma.clientProject.findUnique({
       where: { id: clientProjectId },
       select: { id: true, name: true },
@@ -33,7 +33,20 @@ export async function getPortalView(clientProjectId: string) {
         createdAt: true,
       },
     }),
+    prisma.clientInvoice.findMany({
+      where: { clientProjectId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        amountCents: true,
+        currency: true,
+        status: true,
+        hostedInvoiceUrl: true,
+        recurring: true,
+        createdAt: true,
+      },
+    }),
   ]);
 
-  return { client, approvals, workItems, actions };
+  return { client, approvals, workItems, actions, invoices };
 }

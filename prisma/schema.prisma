@@ -267,6 +267,22 @@ model MarketplaceIntegration {
   externalId      String?
   lastSyncAt      DateTime?
   clientProject   ClientProject?      @relation(fields: [clientProjectId], references: [id])
+  orders          MarketplaceOrder[]
+}
+
+model MarketplaceOrder {
+  id              String                 @id @default(cuid())
+  integrationId   String
+  externalOrderId String // marketplace order id (e.g. Amazon order id)
+  status          String
+  totalCents      Int?
+  currency        String                 @default("usd")
+  purchasedAt     DateTime?
+  raw             Json // the real API payload as synced — never hand-written
+  integration     MarketplaceIntegration @relation(fields: [integrationId], references: [id])
+  syncedAt        DateTime               @default(now())
+
+  @@unique([integrationId, externalOrderId])
 }
 
 model ProcessedStripeEvent {

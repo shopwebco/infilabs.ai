@@ -35,7 +35,7 @@ export default async function PortalHome({
     throw err;
   }
 
-  const [{ client, approvals, workItems, actions }, brand] = await Promise.all([
+  const [{ client, approvals, workItems, actions, invoices }, brand] = await Promise.all([
     getPortalView(tenant),
     getBrandForClientProject(tenant),
   ]);
@@ -99,6 +99,39 @@ export default async function PortalHome({
                   <span className="font-data text-xs text-muted">
                     {STATUS_LABEL[w.status]}
                   </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        <div>
+          <h2 className="text-lg font-semibold">Invoices</h2>
+          {invoices.length === 0 ? (
+            <p className="mt-2 text-sm text-faint">No invoices yet.</p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {invoices.map((inv) => (
+                <li
+                  key={inv.id}
+                  className="flex items-center justify-between rounded-card border border-line px-3 py-2.5 text-sm"
+                >
+                  <span>
+                    ${(inv.amountCents / 100).toFixed(2)}{" "}
+                    <span className="font-data text-xs text-muted">
+                      {inv.recurring ? "retainer" : "one-off"} · {inv.status}
+                    </span>
+                  </span>
+                  {inv.status === "OPEN" && inv.hostedInvoiceUrl && (
+                    <a
+                      href={inv.hostedInvoiceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-card cta-gradient px-3 py-1.5 text-xs font-semibold text-[#05121b]"
+                    >
+                      Pay invoice
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

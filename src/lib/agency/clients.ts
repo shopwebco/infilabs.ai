@@ -1,6 +1,23 @@
 import type { ClientProject, Membership } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { ForbiddenError, NotFoundError, hasRole } from "@/lib/auth/rbac";
+import { syncAgencyClientQuantity } from "@/lib/stripe/connect";
+
+/**
+ * Reconcile the Agency plan's extra-client quantity after a project is created
+ * or (un)archived. Non-fatal by design: webhook reconciliation and the next
+ * sync attempt cover transient failures — the CRUD write must not roll back.
+ */
+async function syncQuantityNonFatal(workspaceId: string): Promise<void> {
+  try {
+    const result = await syncAgencyClientQuantity(workspaceId);
+    if (!result.synced && result.reason !== "stripe_not_configured") {
+      console.warn("agency quantity sync skipped", workspaceId, result.reason);
+    }
+  } catch (err) {
+    console.error("agency quantity sync failed", workspaceId, err);
+  }
+}
 
 /**
  * Clients this membership may see:
@@ -60,7 +77,7 @@ export async function createClientProject(membership: Membership, name: string) 
   if (!hasRole(membership.role, "MANAGER")) {
     throw new ForbiddenError("Only managers and admins can create client projects.");
   }
-  return prisma.clientProject.create({
+  const created = await prisma.clientProject.create({
     data: {
       workspaceId: membership.workspaceId,
       name,
@@ -68,6 +85,8 @@ export async function createClientProject(membership: Membership, name: string) 
     },
     select: { id: true, name: true, archived: true, createdAt: true },
   });
+  await syncQuantityNonFatal(membership.workspaceId);
+  return created;
 }
 
 /** Archive/unarchive a client. ADMIN only (drives Agency plan quantity billing in Phase 5). */
@@ -80,11 +99,13 @@ export async function setClientArchived(
     throw new ForbiddenError("Only admins can archive client projects.");
   }
   await assertClientAccess(membership, clientProjectId); // confirms same workspace
-  return prisma.clientProject.update({
+  const updated = await prisma.clientProject.update({
     where: { id: clientProjectId },
     data: { archived },
     select: { id: true, archived: true },
   });
+  await syncQuantityNonFatal(membership.workspaceId);
+  return updated;
 }
 
 /** Assign a workspace member to a client. MANAGER+, and the actor must be able to access the client. */
