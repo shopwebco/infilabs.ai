@@ -85,11 +85,12 @@ export default async function DashboardPage() {
             <h2 className="text-sm font-semibold text-muted">Marketplaces</h2>
             {/* Honest empty state — no fabricated metrics (CLAUDE.md Rule 1). */}
             <p className="mt-3 text-sm text-muted">
-              No marketplace connected yet.
+              Connect a marketplace to see your real orders here.
             </p>
-            <p className="mt-1 text-sm text-faint">
-              Amazon integration arrives in a later build phase. When connected,
-              your real orders and listings appear here.
+            <p className="mt-2 text-sm">
+              <Link href="/dashboard/integrations" className="text-ice hover:underline">
+                Manage integrations →
+              </Link>
             </p>
           </Panel>
         </div>

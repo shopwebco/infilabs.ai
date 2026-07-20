@@ -10,6 +10,7 @@ import { prisma } from "@/lib/db/prisma";
 import { Logo, Panel } from "@/components/ui";
 import { CreateClientForm } from "./create-client-form";
 import { ProposalsPanel } from "./proposals-panel";
+import { ConnectPanel } from "./connect-panel";
 
 export default async function WorkspacePage({
   params,
@@ -31,7 +32,12 @@ export default async function WorkspacePage({
   const [workspace, clients, proposals] = await Promise.all([
     prisma.workspace.findUnique({
       where: { id: workspaceId },
-      select: { name: true, referralCode: true },
+      select: {
+        name: true,
+        referralCode: true,
+        stripeConnectAccountId: true,
+        connectOnboarded: true,
+      },
     }),
     listAccessibleClients(membership),
     canManage ? listProposals(membership) : Promise.resolve([]),
@@ -94,6 +100,19 @@ export default async function WorkspacePage({
           <div className="mt-8">
             <Panel>
               <CreateClientForm workspaceId={workspaceId} />
+            </Panel>
+          </div>
+        )}
+
+        {isAdmin && (
+          <div className="mt-10">
+            <h2 className="text-lg font-semibold">Agency billing (Stripe Connect)</h2>
+            <Panel className="mt-3">
+              <ConnectPanel
+                workspaceId={workspaceId}
+                connectOnboarded={workspace.connectOnboarded}
+                hasAccount={Boolean(workspace.stripeConnectAccountId)}
+              />
             </Panel>
           </div>
         )}

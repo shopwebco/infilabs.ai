@@ -10,6 +10,7 @@ import { prisma } from "@/lib/db/prisma";
 import { Logo, Panel } from "@/components/ui";
 import { WorkItems } from "./work-items";
 import { AgencyClientExtras } from "./agency-extras";
+import { InvoiceForm } from "./invoice-form";
 
 export default async function ClientPage({
   params,
@@ -35,10 +36,26 @@ export default async function ClientPage({
 
   const items = await listWorkItems(membership, clientId);
   const canManage = hasRole(membership.role, "MANAGER");
-  const [workspace, portalUsers, approvals] = await Promise.all([
-    prisma.workspace.findUnique({ where: { id: workspaceId }, select: { name: true } }),
+  const [workspace, portalUsers, approvals, invoices] = await Promise.all([
+    prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { name: true, connectOnboarded: true },
+    }),
     canManage ? listPortalUsers(membership, clientId) : Promise.resolve([]),
     canManage ? listClientApprovals(membership, clientId) : Promise.resolve([]),
+    canManage
+      ? prisma.clientInvoice.findMany({
+          where: { clientProjectId: clientId },
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            amountCents: true,
+            status: true,
+            recurring: true,
+            hostedInvoiceUrl: true,
+          },
+        })
+      : Promise.resolve([]),
   ]);
 
   return (
@@ -116,6 +133,44 @@ export default async function ClientPage({
                 )}
               </Panel>
             </div>
+
+            <h2 className="pt-4 text-lg font-semibold">Client billing</h2>
+            {workspace?.connectOnboarded ? (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Panel>
+                  <h3 className="text-sm font-semibold text-muted">
+                    New invoice / retainer
+                  </h3>
+                  <div className="mt-3">
+                    <InvoiceForm clientId={clientId} />
+                  </div>
+                </Panel>
+                <Panel>
+                  <h3 className="text-sm font-semibold text-muted">Invoices</h3>
+                  {invoices.length === 0 ? (
+                    <p className="mt-2 text-sm text-faint">No invoices yet.</p>
+                  ) : (
+                    <ul className="mt-2 space-y-1 text-sm">
+                      {invoices.map((inv) => (
+                        <li key={inv.id} className="flex justify-between">
+                          <span>${(inv.amountCents / 100).toFixed(2)}</span>
+                          <span className="font-data text-xs text-muted">
+                            {inv.recurring ? "retainer" : "one-off"} · {inv.status}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Panel>
+              </div>
+            ) : (
+              <Panel className="border-amber/30">
+                <p className="text-sm text-amber">
+                  Client billing unlocks after your workspace admin connects
+                  Stripe and completes onboarding.
+                </p>
+              </Panel>
+            )}
           </div>
         )}
       </section>

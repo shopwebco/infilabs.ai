@@ -197,6 +197,17 @@ model ReferralConversion {
 }
 ```
 
+## Schema evolution (models added during the build — see prisma/schema.prisma, the source of truth)
+
+| Model / field | Added in | Purpose |
+|---|---|---|
+| `User.stripeSubscriptionId` | Phase 1 | Active platform subscription (Pro/Agency) |
+| `ProcessedStripeEvent` | Phase 1 | Webhook idempotency (platform + connected-account events) |
+| `WorkspaceInvite` | Phase 3 | Team invites (hashed single-use token, role, expiry) |
+| `Briefing` | Phase 7 | Stored briefings (scoped USER/CLIENT, cadence, DB-derived body, value rollup) |
+| `Proposal` | Phase 9 | Agent-generated audit pages with public share slug |
+| `MarketplaceOrder` | Phase 8 | Orders synced from the real SP-API (raw payload retained; unique per integration+order) |
+
 ## Invariants (test these)
 1. A `ClientPortalUser` session can only ever read rows where `clientProjectId` matches its token's project.
 2. `WorkItem` with status `DRAFT`/`IN_REVIEW` is never returned by any portal or customer-facing query.
